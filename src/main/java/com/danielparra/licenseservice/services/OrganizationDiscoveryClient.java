@@ -34,4 +34,5 @@ public class OrganizationDiscoveryClient {
 
         return restExchange.getBody();
     }
+
 }

@@ -4,10 +4,13 @@ import com.danielparra.licenseservice.config.ServiceConfig;
 import com.danielparra.licenseservice.model.License;
 import com.danielparra.licenseservice.model.Organization;
 import com.danielparra.licenseservice.repository.LicenseRepository;
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 
 @Service
@@ -21,7 +24,10 @@ public class LicenseService {
     @Autowired
     OrganizationDiscoveryClient organizationDiscoveryClient;
 
+    @HystrixCommand(fallbackMethod = "buildFallbackLicense",
+            threadPoolKey = "getLicenseThreadPool")
     public License getLicense(String organizationId, String licenseId) {
+        waitRandomTime();
         License license = licenseRepository.findByOrganizationIdAndLicenseId(organizationId, licenseId);
 
         Organization org = retrieveOrgInfo(organizationId);
@@ -35,7 +41,10 @@ public class LicenseService {
     }
 
 
+    @HystrixCommand(fallbackMethod = "buildFallbackLicenseList",
+            threadPoolKey = "getLicensesByOrgThreadPool")
     public List<License> getLicensesByOrg(String organizationId){
+        waitRandomTime();
         return licenseRepository.findByOrganizationId( organizationId );
     }
 
@@ -58,5 +67,37 @@ public class LicenseService {
         Organization organization = organizationDiscoveryClient.getOrganization(organizationId);
 
         return organization;
+    }
+
+    private License buildFallbackLicense(String organizationId, String licenseId){
+        return new License()
+                .withId(licenseId)
+                .withOrganizationId( organizationId )
+                .withProductName("Sorry no licensing information currently available");
+    }
+
+    private List<License> buildFallbackLicenseList(String organizationId){
+        List<License> fallbackList = new ArrayList<>();
+        License license = new License()
+                .withId("0000000-00-00000")
+                .withOrganizationId( organizationId )
+                .withProductName("Sorry no licensing information currently available");
+
+        fallbackList.add(license);
+        return fallbackList;
+    }
+
+    private void waitRandomTime() {
+        Random rand = new Random();
+        int randomNumber = rand.nextInt((3 - 1) + 1) + 1;
+        if (randomNumber == 3) sleep();
+    }
+
+    private void sleep() {
+        try {
+            Thread.sleep(11000);
+        } catch (InterruptedException e){
+            e.printStackTrace();
+        }
     }
 }
