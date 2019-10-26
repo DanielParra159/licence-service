@@ -1,6 +1,7 @@
 package com.danielparra.licenseservice.services;
 
 import com.danielparra.licenseservice.model.Organization;
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,7 @@ public class OrganizationDiscoveryClient {
     @Autowired
     private DiscoveryClient discoveryClient;
 
+    @HystrixCommand
     public Organization getOrganization(String organizationId) {
         RestTemplate restTemplate = new RestTemplate();
         List<ServiceInstance> instances = discoveryClient.getInstances("organizationservice"); // TODO: configuration
