@@ -4,7 +4,10 @@ import com.danielparra.licenseservice.config.ServiceConfig;
 import com.danielparra.licenseservice.model.License;
 import com.danielparra.licenseservice.model.Organization;
 import com.danielparra.licenseservice.repository.LicenseRepository;
+import com.danielparra.licenseservice.utils.UserContextHolder;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +18,7 @@ import java.util.UUID;
 
 @Service
 public class LicenseService {
+    private static final Logger logger = LoggerFactory.getLogger(LicenseService.class);
     @Autowired
     private LicenseRepository licenseRepository;
 
@@ -44,6 +48,7 @@ public class LicenseService {
     @HystrixCommand(fallbackMethod = "buildFallbackLicenseList",
             threadPoolKey = "getLicensesByOrgThreadPool")
     public List<License> getLicensesByOrg(String organizationId){
+        logger.debug("LicenseService.getLicensesByOrg  Correlation id: {}", UserContextHolder.getContext().getCorrelationId());
         waitRandomTime();
         return licenseRepository.findByOrganizationId( organizationId );
     }
